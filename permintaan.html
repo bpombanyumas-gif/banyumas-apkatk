@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem ATK - Permintaan</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f0f4f8; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #1a365d, #2b6cb0); color: white; padding: 20px 30px; border-radius: 12px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .nav { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .nav a { background: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; color: #2d3748; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s; }
+        .nav a.active { background: #2b6cb0; color: white; }
+        .nav a:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(43,108,176,0.3); }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        .card h2 { margin-top: 0; color: #2d3748; font-size: 18px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: 600; color: #4a5568; margin-bottom: 5px; font-size: 14px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus { border-color: #2b6cb0; outline: none; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn { background: #2b6cb0; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 16px; transition: all 0.3s; }
+        .btn:hover { background: #1a365d; transform: translateY(-2px); }
+        .btn-success { background: #48bb78; }
+        .btn-success:hover { background: #276749; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        table th { background: #edf2f7; padding: 12px; text-align: left; font-weight: 600; color: #2d3748; }
+        table td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
+        table tr:hover { background: #f7fafc; }
+        .badge { padding: 3px 12px; border-radius: 20px; font-size: 12px; color: white; }
+        .badge.orange { background: #ed8936; }
+        .badge.green { background: #48bb78; }
+        .badge.red { background: #fc8181; }
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 15px; }
+        .alert-success { background: #c6f6d5; color: #276749; border: 1px solid #9ae6b4; }
+        .alert-danger { background: #fed7d7; color: #9b2c2c; border: 1px solid #fc8181; }
+        .loading { text-align: center; padding: 40px; color: #718096; }
+        .refresh-btn { background: rgba(255,255,255,0.2); border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; color: white; font-size: 13px; }
+        .refresh-btn:hover { background: rgba(255,255,255,0.3); }
+        @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } .header { flex-direction: column; text-align: center; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>📝 Permintaan ATK</h1>
+                <div class="subtitle">Form permintaan & riwayat</div>
+            </div>
+            <div style="font-size:14px; display:flex; align-items:center; gap:10px;">
+                <span id="lastUpdate">🔄 Memuat...</span>
+                <button class="refresh-btn" onclick="loadRiwayat()">↻ Refresh</button>
+            </div>
+        </div>
+
+        <div class="nav">
+            <a href="index.html">📊 Dashboard</a>
+            <a href="permintaan.html" class="active">📝 Permintaan</a>
+            <a href="pembelian.html">🛒 Pembelian</a>
+            <a href="kartu-stok.html">📋 Kartu Stok</a>
+        </div>
+
+        <!-- Form Permintaan -->
+        <div class="card">
+            <h2>📝 Form Permintaan ATK</h2>
+            <div id="alertContainer"></div>
+            <form id="permintaanForm" onsubmit="submitPermintaan(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nama Peminta *</label>
+                        <input type="text" id="namaPeminta" placeholder="Masukkan nama lengkap" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fungsi *</label>
+                        <select id="fungsi" required>
+                            <option value="">Pilih Fungsi</option>
+                            <option value="Tata Usaha">Tata Usaha</option>
+                            <option value="Pemeriksaan">Pemeriksaan</option>
+                            <option value="Sertifikasi">Sertifikasi</option>
+                            <option value="Infokom">Infokom</option>
+                            <option value="Penindakan">Penindakan</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Pilih Barang *</label>
+                        <select id="pilihBarang" required>
+                            <option value="">-- Pilih Barang --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jumlah *</label>
+                        <input type="number" id="jumlah" placeholder="Jumlah" min="1" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">📤 Kirim Permintaan</button>
+            </form>
+        </div>
+
+        <!-- Riwayat Transaksi -->
+        <div class="card">
+            <h2>📋 Riwayat Transaksi (Terbaru)</h2>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Barang</th>
+                            <th>Jenis</th>
+                            <th>Jumlah</th>
+                            <th>Peminta</th>
+                            <th>Fungsi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="riwayatBody">
+                        <tr><td colspan="6" class="loading">⏳ Memuat...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbx9n06FYRgGnkTjap2tR0zFwB2Nb3JSqKgakqHOXypz3KFNzFK9d_r8W52NhklmDmJr/exec'; // GANTI DENGAN URL ANDA
+
+        async function loadBarangOptions() {
+            try {
+                const response = await fetch(`${API_URL}?action=getBarangOptions`);
+                const result = await response.json();
+                if (result.status === 'success') {
+                    const select = document.getElementById('pilihBarang');
+                    select.innerHTML = '<option value="">-- Pilih Barang --</option>';
+                    result.data.forEach(item => {
+                        select.innerHTML += `<option value="${item.id}" data-stok="${item.stok}">${item.nama} (Stok: ${item.stok})</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadRiwayat() {
+            try {
+                const response = await fetch(`${API_URL}?action=getTransaksi`);
+                const result = await response.json();
+                if (result.status === 'success') {
+                    renderRiwayat(result.data);
+                    document.getElementById('lastUpdate').textContent = '🔄 Update: ' + new Date().toLocaleTimeString('id-ID');
+                }
+            } catch (error) {
+                document.getElementById('riwayatBody').innerHTML = '<tr><td colspan="6" style="color:red;">❌ Gagal memuat</td></tr>';
+            }
+        }
+
+        function renderRiwayat(data) {
+            const tbody = document.getElementById('riwayatBody');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">📭 Belum ada transaksi</td></tr>';
+                return;
+            }
+
+            let html = '';
+            data.slice(0, 30).forEach(item => {
+                const jenis = item.jenis || '';
+                const badge = jenis === 'Masuk' ? 'badge green' : 'badge orange';
+                html += `<tr>
+                    <td>${item.tanggal ? item.tanggal.substring(0,16) : '-'}</td>
+                    <td><strong>${item.namaBarang || '-'}</strong></td>
+                    <td><span class="${badge}">${jenis}</span></td>
+                    <td>${item.jumlah || 0}</td>
+                    <td>${item.namaPeminta || '-'}</td>
+                    <td>${item.fungsi || '-'}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        async function submitPermintaan(e) {
+            e.preventDefault();
+            
+            const nama = document.getElementById('namaPeminta').value.trim();
+            const fungsi = document.getElementById('fungsi').value;
+            const select = document.getElementById('pilihBarang');
+            const idBarang = select.value;
+            const namaBarang = select.options[select.selectedIndex]?.text || '';
+            const jumlah = parseInt(document.getElementById('jumlah').value);
+            const alertContainer = document.getElementById('alertContainer');
+
+            if (!nama || !fungsi || !idBarang || !jumlah) {
+                showAlert('⚠️ Semua field harus diisi!', 'danger');
+                return;
+            }
+
+            const stokTersedia = parseInt(select.options[select.selectedIndex]?.getAttribute('data-stok')) || 0;
+            if (jumlah > stokTersedia) {
+                showAlert(`⚠️ Stok tidak mencukupi! Tersisa: ${stokTersedia}`, 'danger');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'tambahPermintaan',
+                        namaPeminta: nama,
+                        fungsi: fungsi,
+                        idBarang: idBarang,
+                        namaBarang: namaBarang,
+                        jumlah: jumlah
+                    })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showAlert(`✅ Permintaan berhasil! Stok tersisa: ${result.stokBaru}`, 'success');
+                    document.getElementById('permintaanForm').reset();
+                    loadBarangOptions();
+                    loadRiwayat();
+                } else {
+                    showAlert(`❌ ${result.message || 'Gagal'}`, 'danger');
+                }
+            } catch (error) {
+                showAlert('❌ Error koneksi', 'danger');
+            }
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            container.innerHTML = `<div class="alert ${type === 'success' ? 'alert-success' : 'alert-danger'}">${message}</div>`;
+            setTimeout(() => { container.innerHTML = ''; }, 5000);
+        }
+
+        setInterval(loadRiwayat, 15000);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadBarangOptions();
+            loadRiwayat();
+        });
+    </script>
+</body>
+</html>
